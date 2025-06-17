@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User, Mail, Phone, Calendar, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { v1 as uuidv1 } from "uuid";
 
 const RegisterPage = ({ 
   setCurrentPage, 
@@ -142,8 +143,14 @@ const RegisterPage = ({
       const data = await response.json();
 
       if (data.status === "success") {
+        const sessionId = uuidv1();
+        sessionStorage.setItem("session_id", sessionId);
         sessionStorage.setItem("isAuthenticated", "true");
         sessionStorage.setItem("userEmail", registerData.email);
+        // sessionStorage.setItem("user_id", data.user_id);
+        // sessionStorage.setItem("name", data.name);
+        // sessionStorage.setItem("age", data.age);
+
         setIsAuthenticated(true);
         setUserEmail(registerData.email);
         showNotification(

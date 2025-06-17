@@ -316,13 +316,13 @@ def fetch_available_slots_tool(bay_type: str, date: str) -> str:
 
 @tool(
     name="get_bay_recommendations",
-    description="Recommends activities based on cross-booking patterns using correlation matrix",
+    description="Recommends activities based on cross-booking patterns using correlation matrix for users with past booking, for new user it recommends based on the age group popularity",
     requires_confirmation=False,
     show_result=True
 )
 def get_bay_recommendations_tool() -> str:
     """
-        Recommends activities based on user's last booked activity using correlation matrix and Popularity Index.
+        Recommends activities based on user's last booked activity using correlation matrix and Popularity Index if user has past booking. For new user it recommends based on the age group popularity
 
     """
     conn = connect_to_db()
@@ -390,13 +390,13 @@ def get_bay_recommendations_tool() -> str:
 
 def get_bay_recommendations_by_age_tool(age: int) -> str:
     """
-    Recommends activities for new users based on age-based popularity analysis
+    Recommends activities for new users based on age-based popularity
     
     Args:
         age: User's current age
         
     Returns:
-        JSON string with recommended activities and popularity scores
+        string with recommended activities and popularity scores
     """
     conn = connect_to_db()
     if not conn:
@@ -457,15 +457,15 @@ def get_bay_recommendations_by_age_tool(age: int) -> str:
         for i, result in enumerate(results):
             count = int(result['booking_count'])
             popularity = round(count / max_count * 100)
-            
-            recommendations.append({
-                'activity': result['activity'],
-                # 'popularity_score': f"{popularity}%",
-                # 'age_group': user_age_group,
-                'rank': i + 1
-            })
+
+            recommendations.append(result['activity'])            
+            # recommendations.append({
+            #     result['activity']
+            #     # 'popularity_score': f"{popularity}%",
+            #     # 'age_group': user_age_group,
+            # })
         
-        return json.dumps(recommendations, indent=2)
+        return f"Try out the bays {recommendations}"
         
     except Error as e:
         return f"Query failed: {e}"
@@ -610,24 +610,20 @@ def check_availability_tool(bay_type: str, date: str, time_slot: str) -> str:
     Returns:
         "Available", "Not available", or error message with alternative slots
     """
-    # Regular expression to validate time slot format (HH:MM-HH:MM)
     time_slot_pattern = r'^([0-1]?[0-9]|2[0-3]):[0-5][0-9]-([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'
     
-    # Validate time slot format
     if not re.match(time_slot_pattern, time_slot):
         return "Invalid time slot format. Expected format: HH:MM-HH:MM"
     
-    # Validate date format (YYYY-MM-DD)
     date_pattern = r'^\d{4}-\d{2}-\d{2}$'
     if not re.match(date_pattern, date):
         return "Invalid date format. Expected format: YYYY-MM-DD"
     
-    # Validate bay type
+    bay_type=bay_type.lower()
     valid_bay_types = ['golf', 'cricket', 'vvip room', 'football', 'mega screen', 'playstation room']
     if bay_type not in valid_bay_types:
         return f"Invalid bay type. Must be one of: {', '.join(valid_bay_types)}"
     
-    # Validate that start time is before end time
     start_time, end_time = time_slot.split('-')
     start_minutes = time_to_minutes(start_time)
     end_minutes = time_to_minutes(end_time)
@@ -635,14 +631,12 @@ def check_availability_tool(bay_type: str, date: str, time_slot: str) -> str:
     if start_minutes >= end_minutes:
         return "Invalid time slot: Start time must be before end time"
     
-    # Connect to database and check availability
     conn = connect_to_db()
     if not conn:
         return "Database connection error"
     
     try:
         cursor = conn.cursor()
-        # Get all existing bookings for the same bay type and date
         query = """
             SELECT time_slot 
             FROM bookings 
@@ -652,25 +646,21 @@ def check_availability_tool(bay_type: str, date: str, time_slot: str) -> str:
         cursor.execute(query, (bay_type, date))
         existing_bookings = cursor.fetchall()
         
-        # Check for conflicts with existing time slots
         input_start_minutes = start_minutes
         input_end_minutes = end_minutes
         
         for booking in existing_bookings:
             existing_slot = booking[0]
             
-            # Validate existing slot format using regex
             if not re.match(time_slot_pattern, existing_slot):
-                continue  # Skip invalid entries in database
+                continue
             
             existing_start, existing_end = existing_slot.split('-')
             existing_start_minutes = time_to_minutes(existing_start)
             existing_end_minutes = time_to_minutes(existing_end)
             
-            # Check for overlap
             if (input_start_minutes < existing_end_minutes and 
                 input_end_minutes > existing_start_minutes):
-                # Slot is not available - fetch alternative slots
                 alt_slots = fetch_available_slots_fn(bay_type, date)
                 try:
                     slots_data = json.loads(alt_slots)
@@ -701,25 +691,20 @@ def check_availability_tool_fn(bay_type: str, date: str, time_slot: str) -> str:
     Returns:
         "Available", "Not available", or error message with alternative slots
     """
-    # Regular expression to validate time slot format (HH:MM-HH:MM)
     time_slot_pattern = r'^([0-1]?[0-9]|2[0-3]):[0-5][0-9]-([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'
     
-    # Validate time slot format
     if not re.match(time_slot_pattern, time_slot):
         return "Invalid time slot format. Expected format: HH:MM-HH:MM"
     
-    # Validate date format (YYYY-MM-DD)
     date_pattern = r'^\d{4}-\d{2}-\d{2}$'
     if not re.match(date_pattern, date):
         return "Invalid date format. Expected format: YYYY-MM-DD"
     
     bay_type=bay_type.lower()
-    # Validate bay type
     valid_bay_types = ['golf', 'cricket', 'vvip room', 'football', 'mega screen', 'playstation room']
     if bay_type not in valid_bay_types:
         return f"Invalid bay type. Must be one of: {', '.join(valid_bay_types)}"
     
-    # Validate that start time is before end time
     start_time, end_time = time_slot.split('-')
     start_minutes = time_to_minutes(start_time)
     end_minutes = time_to_minutes(end_time)
@@ -727,14 +712,12 @@ def check_availability_tool_fn(bay_type: str, date: str, time_slot: str) -> str:
     if start_minutes >= end_minutes:
         return "Invalid time slot: Start time must be before end time"
     
-    # Connect to database and check availability
     conn = connect_to_db()
     if not conn:
         return "Database connection error"
     
     try:
         cursor = conn.cursor()
-        # Get all existing bookings for the same bay type and date
         query = """
             SELECT time_slot 
             FROM bookings 
@@ -744,25 +727,21 @@ def check_availability_tool_fn(bay_type: str, date: str, time_slot: str) -> str:
         cursor.execute(query, (bay_type, date))
         existing_bookings = cursor.fetchall()
         
-        # Check for conflicts with existing time slots
         input_start_minutes = start_minutes
         input_end_minutes = end_minutes
         
         for booking in existing_bookings:
             existing_slot = booking[0]
             
-            # Validate existing slot format using regex
             if not re.match(time_slot_pattern, existing_slot):
-                continue  # Skip invalid entries in database
+                continue 
             
             existing_start, existing_end = existing_slot.split('-')
             existing_start_minutes = time_to_minutes(existing_start)
             existing_end_minutes = time_to_minutes(existing_end)
             
-            # Check for overlap
             if (input_start_minutes < existing_end_minutes and 
                 input_end_minutes > existing_start_minutes):
-                # Slot is not available - fetch alternative slots
                 alt_slots = fetch_available_slots_fn(bay_type, date)
                 try:
                     slots_data = json.loads(alt_slots)
@@ -1388,7 +1367,6 @@ def delete_booking_tool(booking_ref: str) -> str:
     try:
         cursor = conn.cursor()
         
-        # 1. Get transaction reference for the booking
         cursor.execute("SELECT transaction_ref FROM bookings WHERE booking_ref = %s", (booking_ref,))
         booking_record = cursor.fetchone()
         
@@ -1397,10 +1375,8 @@ def delete_booking_tool(booking_ref: str) -> str:
             
         transaction_ref = booking_record[0]
         
-        # 2. Delete the booking
         cursor.execute("DELETE FROM bookings WHERE booking_ref = %s", (booking_ref,))
         
-        # 3. Delete corresponding payment if transaction_ref exists
         if transaction_ref:
             cursor.execute("DELETE FROM payments WHERE transaction_ref = %s", (transaction_ref,))
         
@@ -1451,6 +1427,8 @@ booking_agent = Agent(
     show_tool_calls=True,
     # memory=memory,
     add_history_to_messages=True,
+    # num_history_runs=10,
+    add_datetime_to_instructions=True,
 )
 
 cancellation_agent = Agent(
@@ -1486,10 +1464,10 @@ cancellation_agent = Agent(
     markdown=True,
     show_tool_calls=True,
     add_history_to_messages=True,
+    # num_history_runs=10,
     add_datetime_to_instructions=True,
 )
 
-# Payment Agent
 payment_agent = Agent(
     name="Payment Agent",
     role="Handles payment processing for bookings",
@@ -1497,7 +1475,7 @@ payment_agent = Agent(
     description="Manages the payment workflow including calculation and processing",
     instructions=dedent(f"""\
         Handle payment processing with these steps:
-        1. Calculate total using 'get_total_payment' tool and list out the discount applied to the amount
+        1. Calculate total using 'get_total_payment' in rupees tool and list out the discount applied to the amount
         2. Then present payment options to user to make the payment:
            a) Credit/Debit Card
            b) UPI
@@ -1506,14 +1484,14 @@ payment_agent = Agent(
         3. Collect payment details based on selected method and then proceed:
            - For Card: Ask the Card number, expiry, CVV
            - For UPI: Ask UPI ID
-           - For Net Banking: Ask Bank name, credentials
+           - For Net Banking: Ask Bank name, user name
            
         4. Finally process payment using 'process_payment' tool
         5. Send payment confirmation to user
         6. Finally complete the booking by using the create_booking_tool
         
         Rules:
-        - Always show price breakdown before payment
+        - Always show price breakdown in rupees before payment
         - Collect all the required payment details before confirming the final payment
         - Handle payment failures gracefully
         - Mask sensitive data in confirmation messages"""),
@@ -1523,6 +1501,7 @@ payment_agent = Agent(
     show_tool_calls=True,
     # memory=memory,
     add_history_to_messages=True,
+    # num_history_runs=10,
     add_datetime_to_instructions=True,
 )
 
@@ -1532,15 +1511,14 @@ bay_recommendation_agent = Agent(
     model=model,
     description="gives the bay recommendations based on user history and preferences",
     instructions=dedent(f"""\
-        prioritize the recomendations which tool returned according to time and day
-        No need to give any other information just give the recommendations.
+        Handles the recommendations for the users
         Give appropriate bay recommendations using get_bay_recommendations_tool
-        Give the recommendations based on the past preferences, current time of the day.
     """),
     tools=[get_bay_recommendations_tool],
     markdown=True,
     # memory=memory,
     add_history_to_messages=True,
+    # num_history_runs=10,
     add_datetime_to_instructions=True,
 )
 
@@ -1558,6 +1536,7 @@ menu_recommendation_agent = Agent(
     markdown=True,
     # memory=memory,
     add_history_to_messages=True,
+    # num_history_runs=10,
     add_datetime_to_instructions=True,
 )
 
@@ -1591,6 +1570,7 @@ faq_agent = Agent(
     markdown=True,
     # memory=memory,
     add_history_to_messages=True,
+    # num_history_runs=10,
     add_datetime_to_instructions=True,
 )
 
@@ -1635,10 +1615,14 @@ strikin_team = Team(
         
         4. NOTE:
             - While handling the booking make sure to make the payment and then only complete the booking.
+            - there is NO repetations in response. DO NOT directly put the the response of the agent. USE agent response as source for answering user query
+            - Only give short and concise responses.
+            - make sure that you wont give recommendations between the booking process
+            - user input bay name can either be for recommendation or for booking judge that based on context.
+            - dont recommend bay unless user asked or initial contact
         
         Use warm, professional language according to user mood and age with occasional emojis.
-        make sure : there is NO repetations in response. DO NOT directly put the the response of the agent. USE agent response as source for answering user query
-        Only give short and concise responses.
+        
         """),
     add_member_tools_to_system_message=True,
     team_session_state={},
@@ -1658,7 +1642,6 @@ strikin_team = Team(
     add_datetime_to_instructions=True,
 )
 
-# ------------------ FastAPI App ------------------
 app = FastAPI(title="STRIKIN Concierge Service")
 
 app.add_middleware(
@@ -1669,7 +1652,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ------------------ Request/Response Schemas ------------------
 class ChatRequest(BaseModel):
     message: str
     email: str
@@ -1677,16 +1659,15 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     reply: str
-# ------------------ /chat Endpoint ------------------
+    
 @app.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(req: ChatRequest):
     try:
         # print(f"Received message from {req.email}: {req.message} (session_id: {req.session_id})")
         strikin_team.session_id=req.session_id
-        print("BEFORE----------",strikin_team.team_session_state)        
+        # print("BEFORE----------",strikin_team.team_session_state)        
         response = strikin_team.run(req.message, user_id=req.email)
-        print("AFTER----------",strikin_team.team_session_state)
-        
+        # print("AFTER----------",strikin_team.team_session_state)
         return ChatResponse(reply=response.messages[-1].content)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -1696,7 +1677,6 @@ def update_session(user_details: Dict[str, Any]):
     # strikin_team.session_id = sessionId
     strikin_team.team_session_state={"user_details" : user_details}
 
-# --- Password Utility ---
 pwd_ctx = CryptContext(schemes=["bcrypt"])
 
 def hash_password(password: str) -> str:
@@ -1706,7 +1686,6 @@ def verify_password(plain: str, hashed: str) -> bool:
     return pwd_ctx.verify(plain, hashed)
 
 
-# ------------------ /login and /register Endpoints ------------------
 class RegisterRequest(BaseModel):
     name: str
     email: EmailStr
@@ -1719,7 +1698,6 @@ class LoginRequest(BaseModel):
     password: str
     
 
-# --- Endpoints ---
 @app.post("/register")
 def register(req: RegisterRequest):
     conn = connect_to_db()
@@ -1727,7 +1705,6 @@ def register(req: RegisterRequest):
         raise HTTPException(status_code=500, detail="DB connection error")
 
     cursor = conn.cursor()
-    # Check for existing email
     cursor.execute("SELECT user_id FROM users WHERE email = %s", (req.email,))
     if cursor.fetchone():
         cursor.close()
@@ -1741,13 +1718,11 @@ def register(req: RegisterRequest):
     )
     conn.commit()
     
-    # Get the newly created user's ID
     user_id = cursor.lastrowid
     
     cursor.close()
     conn.close()
     
-    # Prepare user details for session
     user_details = {
         "user_id": user_id,
         "name": req.name,
@@ -1755,7 +1730,6 @@ def register(req: RegisterRequest):
         "age": req.age,
     }
     
-    # Update session state
     update_session(user_details)
 
     return {"status": "success"}

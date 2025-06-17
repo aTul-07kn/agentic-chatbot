@@ -18,6 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from agno.tools.duckduckgo import DuckDuckGoTools
 from agno.tools.pubmed import PubmedTools
 from agno.team import Team
+from agno.eval.accuracy import AccuracyEval
 import re
 import random
 import string
@@ -170,7 +171,10 @@ agent_team.session_id="a"
 agent_team.team_session_state={"name": "niraj"}
 
 print("session state:", agent_team.team_session_state)
-print(agent_team.run("what is my name", user_id="u4",session_id="a").content)
+response = agent_team.run("what is my name", user_id="u4",session_id="a")
+
+accuracyTeam = AccuracyEval()
+
 print("session state:", agent_team.team_session_state)
 # print(agent_team.run("i like roti", user_id="u4").content)
 

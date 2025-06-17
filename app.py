@@ -28,7 +28,6 @@ import string
 import mysql.connector
 from mysql.connector import Error
 
-# Load environment variables from .env file
 load_dotenv()
 
 NVIDIA_API_KEY=os.getenv("NVIDIA_API_KEY")
@@ -101,7 +100,6 @@ def time_to_minutes(time_str: str) -> int:
     hours, minutes = map(int, time_str.split(':'))
     return hours * 60 + minutes
 
-# Helper function to convert minutes to time string
 def minutes_to_time(minutes: int) -> str:
     """Convert minutes since midnight to HH:MM time string"""
     hours = minutes // 60
@@ -133,13 +131,11 @@ def fetch_available_slots_fn(bay_type: str, date: str) -> str:
     Returns:
         JSON string with available time slots
     """
-    # Validate date format
     date_pattern = r'^\d{4}-\d{2}-\d{2}$'
     if not re.match(date_pattern, date):
         return "Invalid date format. Expected format: YYYY-MM-DD"
     
     bay_type=bay_type.lower()
-    # Validate bay type
     valid_bay_types = ['golf', 'cricket', 'vvip room', 'football', 'mega screen', 'playstation room']
     if bay_type not in valid_bay_types:
         return f"Invalid bay type. Must be one of: {', '.join(valid_bay_types)}"
@@ -150,7 +146,6 @@ def fetch_available_slots_fn(bay_type: str, date: str) -> str:
     
     try:
         cursor = conn.cursor()
-        # Get all existing bookings for the same bay type and date
         query = """
             SELECT time_slot 
             FROM bookings 
@@ -160,10 +155,8 @@ def fetch_available_slots_fn(bay_type: str, date: str) -> str:
         cursor.execute(query, (bay_type, date))
         existing_bookings = [row[0] for row in cursor.fetchall()]
         
-        # Define operating hours (10AM to 10PM)
-        operating_hours = (10 * 60, 22 * 60)  # 10:00 to 22:00 in minutes
+        operating_hours = (10 * 60, 22 * 60)
         
-        # Convert booked slots to minutes ranges
         booked_ranges = []
         for slot in existing_bookings:
             if not re.match(r'^\d{2}:\d{2}-\d{2}:\d{2}$', slot):
@@ -173,10 +166,8 @@ def fetch_available_slots_fn(bay_type: str, date: str) -> str:
             end_min = time_to_minutes(end_str)
             booked_ranges.append((start_min, end_min))
         
-        # Sort booked ranges by start time
         booked_ranges.sort(key=lambda x: x[0])
         
-        # Merge overlapping booked ranges
         merged_ranges = []
         if booked_ranges:
             current_start, current_end = booked_ranges[0]
@@ -188,11 +179,9 @@ def fetch_available_slots_fn(bay_type: str, date: str) -> str:
                     current_start, current_end = start, end
             merged_ranges.append((current_start, current_end))
         
-        # Find available slots between booked ranges
         available_slots = []
-        current_time = operating_hours[0]  # Start at 10:00
+        current_time = operating_hours[0] 
         
-        # Check before first booking
         for start, end in merged_ranges:
             if current_time < start:
                 available_slots.append((
@@ -201,14 +190,11 @@ def fetch_available_slots_fn(bay_type: str, date: str) -> str:
                 ))
             current_time = max(current_time, end)
         
-        # Check after last booking
         if current_time < operating_hours[1]:
             available_slots.append((current_time, operating_hours[1]))
         
-        # Format available slots as strings
         formatted_slots = []
         for start_min, end_min in available_slots:
-            # Only include slots of at least 30 minutes
             if end_min - start_min >= 30:
                 start_time = minutes_to_time(start_min)
                 end_time = minutes_to_time(end_min)
@@ -261,7 +247,6 @@ def fetch_available_slots_tool(bay_type: str, date: str) -> str:
     
     try:
         cursor = conn.cursor()
-        # Get all existing bookings for the same bay type and date
         query = """
             SELECT time_slot 
             FROM bookings 
@@ -271,10 +256,8 @@ def fetch_available_slots_tool(bay_type: str, date: str) -> str:
         cursor.execute(query, (bay_type, date))
         existing_bookings = [row[0] for row in cursor.fetchall()]
         
-        # Define operating hours (10AM to 10PM)
-        operating_hours = (10 * 60, 22 * 60)  # 10:00 to 22:00 in minutes
+        operating_hours = (10 * 60, 22 * 60)
         
-        # Convert booked slots to minutes ranges
         booked_ranges = []
         for slot in existing_bookings:
             if not re.match(r'^\d{2}:\d{2}-\d{2}:\d{2}$', slot):
@@ -284,10 +267,8 @@ def fetch_available_slots_tool(bay_type: str, date: str) -> str:
             end_min = time_to_minutes(end_str)
             booked_ranges.append((start_min, end_min))
         
-        # Sort booked ranges by start time
         booked_ranges.sort(key=lambda x: x[0])
         
-        # Merge overlapping booked ranges
         merged_ranges = []
         if booked_ranges:
             current_start, current_end = booked_ranges[0]
@@ -299,11 +280,9 @@ def fetch_available_slots_tool(bay_type: str, date: str) -> str:
                     current_start, current_end = start, end
             merged_ranges.append((current_start, current_end))
         
-        # Find available slots between booked ranges
         available_slots = []
-        current_time = operating_hours[0]  # Start at 10:00
+        current_time = operating_hours[0]
         
-        # Check before first booking
         for start, end in merged_ranges:
             if current_time < start:
                 available_slots.append((
@@ -312,14 +291,11 @@ def fetch_available_slots_tool(bay_type: str, date: str) -> str:
                 ))
             current_time = max(current_time, end)
         
-        # Check after last booking
         if current_time < operating_hours[1]:
             available_slots.append((current_time, operating_hours[1]))
         
-        # Format available slots as strings
         formatted_slots = []
         for start_min, end_min in available_slots:
-            # Only include slots of at least 30 minutes
             if end_min - start_min >= 30:
                 start_time = minutes_to_time(start_min)
                 end_time = minutes_to_time(end_min)
@@ -517,7 +493,6 @@ def get_menu_recommendations_by_user_tool() -> str:
         cursor = conn.cursor(dictionary=True)
         user_id=strikin_team.team_session_state["user_details"]["user_id"]
 
-        # Try to get user's food preferences from their bookings
         cursor.execute("""
             SELECT extras FROM bookings
             WHERE user_id = %s AND extras IS NOT NULL AND extras != ''
@@ -526,14 +501,12 @@ def get_menu_recommendations_by_user_tool() -> str:
         
         food_counts = {}
         if user_bookings:
-            # Aggregate quantities of food items from user's bookings
             for booking in user_bookings:
                 items = parse_extras(booking['extras'])
                 for item, qty in items.items():
                     food_counts[item] = food_counts.get(item, 0) + qty
             
             if food_counts:
-                # Process user's personal food preferences
                 sorted_items = sorted(food_counts.items(), key=lambda x: x[1], reverse=True)[:4]
                 max_count = sorted_items[0][1] if sorted_items else 1
                 
@@ -548,12 +521,10 @@ def get_menu_recommendations_by_user_tool() -> str:
                     })
                 return json.dumps(recommendations, indent=2)
         
-        # Fallback to age-based recommendations
         cursor.execute("SELECT age FROM users WHERE user_id = %s", (user_id,))
         user_data = cursor.fetchone()
         age = user_data['age'] if user_data and user_data['age'] is not None else 21
         
-        # Define age groups
         age_groups = {
             'Under 18': (0, 17),
             '18-28': (18, 28),
@@ -562,7 +533,6 @@ def get_menu_recommendations_by_user_tool() -> str:
             '42+': (42, 120)
         }
         
-        # Determine user's age group
         user_age_group = next(
             (group for group, (min_a, max_a) in age_groups.items() 
              if min_a <= age <= max_a),
@@ -570,7 +540,6 @@ def get_menu_recommendations_by_user_tool() -> str:
         )
         min_age, max_age = age_groups[user_age_group]
         
-        # Get popular foods in user's age group
         cursor.execute("""
             SELECT extras FROM bookings b
             JOIN users u ON b.user_id = u.user_id
@@ -587,7 +556,6 @@ def get_menu_recommendations_by_user_tool() -> str:
                 age_food_counts[item] = age_food_counts.get(item, 0) + qty
         
         if not age_food_counts:
-            # Final fallback - global popularity
             cursor.execute("""
                 SELECT extras FROM bookings
                 WHERE extras IS NOT NULL AND extras != ''
@@ -1295,7 +1263,162 @@ def handle_feedback_tool(feedback_title: str, feedback: str) -> str:
     finally:
         if conn:
             conn.close()
+@tool(
+    name="get_event_details",
+    description="Fetches upcoming events occurring after today's date",
+    requires_confirmation=False,
+    show_result=True,
+    tool_hooks=[logger_hook]
+)
+def get_event_details_tool() -> str:
+    """
+    Fetches events from the database where the event date is after today.
 
+    Returns:
+        A string containing the list of upcoming events or an appropriate error message.
+    """
+    conn = connect_to_db()
+    if not conn:
+        return "Database connection error"
+
+    try:
+        cursor = conn.cursor()
+        today = date.today().isoformat()
+
+        query = """
+        SELECT event_name, event_description, event_date 
+        FROM events
+        WHERE event_date > %s 
+        ORDER BY event_date ASC
+        """
+        cursor.execute(query, (today,))
+        events = cursor.fetchall()
+
+        if not events:
+            return "No upcoming events found."
+
+        response_lines = ["**Upcoming Events:**"]
+        for name, event_date, desc in events:
+            response_lines.append(f"\n- **{name}** on {event_date} \n  _{desc}_")
+
+        return "\n".join(response_lines)
+
+    except Exception as e:
+        logger_hook(f"Failed to fetch event details: {str(e)}")
+        return f"Failed to fetch events: {str(e)}"
+    finally:
+        if conn:
+            conn.close()
+
+@tool(
+    name="fetch_future_bookings",
+    description="Fetches upcoming bookings for a user that haven't occurred yet",
+    requires_confirmation=False,
+    show_result=True,
+    tool_hooks=[logger_hook]
+)
+def fetch_future_bookings_tool() -> list:
+    """
+    Retrieves future bookings from the database for a specific user
+        
+    Returns:
+        List of dictionaries with booking details or error message
+    """
+    conn = connect_to_db()
+    if not conn:
+        return "Database connection error"
+    
+    try:
+        cursor = conn.cursor(dictionary=True)
+        current_time = datetime.now()
+        current_date = current_time.date()
+        current_time_str = current_time.strftime("%H:%M")
+        user_id= strikin_team.team_session_state["user_details"]["user_id"]
+        
+        query = """
+        SELECT booking_ref, bay_type, booking_date, time_slot, 
+               participants, extras, booking_price
+        FROM bookings 
+        WHERE user_id = %s 
+            AND (
+                booking_date > %s 
+                OR (
+                    booking_date = %s 
+                    AND SUBSTRING_INDEX(time_slot, '-', 1) > %s
+                )
+            )
+        ORDER BY booking_date, SUBSTRING_INDEX(time_slot, '-', 1)
+        """
+        cursor.execute(query, (user_id, current_date, current_date, current_time_str))
+        bookings = cursor.fetchall()
+        
+        if not bookings:
+            return "No upcoming bookings found"
+            
+        return bookings
+        
+    except Exception as e:
+        logger_hook(f"Failed to fetch bookings: {str(e)}")
+        return f"Error retrieving bookings: {str(e)}"
+    finally:
+        if conn:
+            conn.close()
+            
+@tool(
+    name="delete_booking",
+    description="Deletes a specific booking and its corresponding payment transaction",
+    requires_confirmation=False,
+    show_result=True,
+    tool_hooks=[logger_hook]
+)
+def delete_booking_tool(booking_ref: str) -> str:
+    """
+    Deletes a booking record and its payment transaction from the database
+    
+    Args:
+        booking_ref: Unique reference of the booking to delete
+        
+    Returns:
+        Success message or error description
+    """
+    conn = connect_to_db()
+    if not conn:
+        return "Database connection error"
+    
+    try:
+        cursor = conn.cursor()
+        
+        # 1. Get transaction reference for the booking
+        cursor.execute("SELECT transaction_ref FROM bookings WHERE booking_ref = %s", (booking_ref,))
+        booking_record = cursor.fetchone()
+        
+        if not booking_record:
+            return "Booking does not exist"
+            
+        transaction_ref = booking_record[0]
+        
+        # 2. Delete the booking
+        cursor.execute("DELETE FROM bookings WHERE booking_ref = %s", (booking_ref,))
+        
+        # 3. Delete corresponding payment if transaction_ref exists
+        if transaction_ref:
+            cursor.execute("DELETE FROM payments WHERE transaction_ref = %s", (transaction_ref,))
+        
+        conn.commit()
+        
+        if transaction_ref:
+            return f"Booking {booking_ref} and payment {transaction_ref} cancelled successfully"
+        else:
+            return f"Booking {booking_ref} cancelled successfully (no payment found)"
+        
+    except Exception as e:
+        conn.rollback()
+        logger_hook(f"Booking deletion failed: {str(e)}")
+        return f"Failed to cancel booking: {str(e)}"
+    finally:
+        if conn:
+            conn.close()
+            
 booking_agent = Agent(
     name="Booking Agent",
     role="Handles bay and dining reservations",
@@ -1323,11 +1446,47 @@ booking_agent = Agent(
         - Always verify availability
         - After taking all details, go to payments using 'Payment agent'
         - Then save the booking details in using the create_booking_tool"""),
-    tools=[check_availability_tool, create_booking_tool, fetch_available_slots_tool, get_user_bookings_tool, get_menu_items_tool],
+    tools=[check_availability_tool, create_booking_tool, fetch_available_slots_tool, get_user_bookings_tool, fetch_future_bookings_tool, get_menu_items_tool],
     markdown=True,
     show_tool_calls=True,
     # memory=memory,
     add_history_to_messages=True,
+)
+
+cancellation_agent = Agent(
+    name="Cancellation Agent",
+    role="Handles booking cancellations and refunds",
+    model=model,
+    description="Manages the booking cancellation process from start to finish",
+    instructions=dedent("""
+        You are a helpful assistant that handles booking cancellations. Follow these steps:
+        1. Fetch their upcoming bookings using 'fetch_future_bookings' tool
+        2. Present the list of bookings to the user in a numbered format showing:
+           - Booking Reference
+           - Bay Type
+           - Date
+           - Time Slot
+           - Participants
+           - Extras
+           - Price
+        3. Ask the user to select which booking they want to cancel by entering the booking reference
+        4. Use the 'delete_booking' tool with the corresponding booking_ref
+        5. After successful cancellation, inform the user:
+           "Your booking has been cancelled. Your money will be refunded within 5-6 working days."
+        
+        Important Rules:
+        - Always verify bookings belong to the user
+        - If no bookings exist, inform the user immediately
+        - Handle errors gracefully and provide clear explanations
+        - Never proceed without explicit user confirmation
+        - Always show booking details before deletion
+        - Confirm successful cancellation with refund timeline
+    """),
+    tools=[fetch_future_bookings_tool, delete_booking_tool],
+    markdown=True,
+    show_tool_calls=True,
+    add_history_to_messages=True,
+    add_datetime_to_instructions=True,
 )
 
 # Payment Agent
@@ -1412,28 +1571,29 @@ faq_agent = Agent(
     instructions=dedent(f"""\
         Answer questions about STRIKIN Hyderabad:
         
+        General Info:
         - Hours: "10AM-10PM daily"
         - Location: "Gachibowli, Hyderabad"
         - Menu: call the menu_tool
         - Contact: "+91-1234567890"
         
-        Answer the available slots related query using the fetch_available_slots_tool
-        Answer user's booking related details using the get_user_bookings_tool
-        Answer the bays and pricing related information using the get_bay_details_tool
-        Answer the menu related information using the get_menu_items_tool
+        Answer the available slots related query using the 'fetch_available_slots_tool'
+        Answer user's booking related details using the 'get_user_bookings_tool'
+        Answer the bays and pricing related information using the 'get_bay_details_tool'
+        Answer the menu related information using the 'get_menu_items_tool'
+        Answer the queries related to the events using the 'get_event_details_tool'
         
         To get more information about the bay types and their functionalities use the knowledge base.
         Rules:
         - Keep responses to 1-2 sentences
         - Be polite and professional"""),
-    tools=[fetch_available_slots_tool, get_user_bookings_tool, get_bay_details_tool, get_menu_items_tool],
+    tools=[fetch_available_slots_tool, get_user_bookings_tool, get_bay_details_tool, get_menu_items_tool, get_event_details_tool],
     markdown=True,
     # memory=memory,
     add_history_to_messages=True,
     add_datetime_to_instructions=True,
 )
 
-# Create concierge team
 strikin_team = Team(
     name="Strikin Team",
     mode="coordinate",
@@ -1442,7 +1602,7 @@ strikin_team = Team(
     #     id="qwen/qwen3-32b:free",
     #     api_key=OPENROUTER_API_KEY,
     # ),
-    members=[booking_agent, bay_recommendation_agent, menu_recommendation_agent, faq_agent, payment_agent],
+    members=[booking_agent, bay_recommendation_agent, menu_recommendation_agent, faq_agent, payment_agent, cancellation_agent],
     tools=[handle_feedback_tool],
     description="Orchestrates personalized guest experiences at STRIKIN",
     instructions=dedent("""   
@@ -1459,7 +1619,8 @@ strikin_team = Team(
            - Payment requests -> 'Payment agent'
            - Bay Recommendations → 'Bay Recommendation Agent'
            - Menu Recommendations -> 'Menu Recommendations Agent'
-           - General questions about Bays, Menu items, pricing, bookings and availability → 'FAQ Agent'
+           - General questions about Bays, Menu items, pricing, bookings, upcoming events and availability → 'FAQ Agent'
+           - Cancellation of booking -> 'Cancellation Agent'
            
         3. HANDLE FEEDBACK'S:
             - If the user is frustrated and want to provide feedback regarding any service, use the handle_feedback_tool by passing the feedback_title and the feedback text

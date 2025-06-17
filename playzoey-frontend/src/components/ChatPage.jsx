@@ -1,6 +1,7 @@
 // ChatPage.js
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, Send, ArrowLeft } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 const ChatPage = () => {
   const [messages, setMessages] = useState([]);
@@ -223,7 +224,9 @@ const ChatPage = () => {
                           }`}
                         >
                           <p className="whitespace-pre-wrap break-words">
-                            {message.text}
+                            <ReactMarkdown>
+                              {message.text}
+                            </ReactMarkdown>
                           </p>
                         </div>
                         <span

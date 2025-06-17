@@ -1,0 +1,17 @@
+pandas
+python-dotenv
+openai
+agno
+fastapi
+uvicorn
+fastapi[standard]
+sqlalchemy
+mysql-connector-python
+google-genai
+bcrypt==3.2.2
+passlib==1.7.4
+pypdf
+lancedb
+tantivy
+pylance
+sentence-transformers

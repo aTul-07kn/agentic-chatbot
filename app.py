@@ -378,14 +378,16 @@ def get_bay_recommendations_tool() -> str:
     
     last_activity = last_activity[0]
     
-    recommendations = correlation_matrix[last_activity].sort_values(ascending=False)[1:4]
+    # recommendations = correlation_matrix[last_activity].sort_values(ascending=False)[1:4]
     
+    correlated = correlation_matrix[last_activity].sort_values(ascending=False)
+    top_bays = correlated.index.drop(last_activity)[:3].tolist()
     # return json.dumps({
     #     "based_on": last_activity,
     #     "recommendations": recommendations.index.tolist(),
     # })
     
-    recommendation_string=f"Interested in {last_activity}, Try out : {recommendations}"
+    recommendation_string=f"Interested in {last_activity}, Try out : {top_bays}"
     return recommendation_string
 
 def get_bay_recommendations_by_age_tool(age: int) -> str:
@@ -1276,7 +1278,7 @@ def get_event_details_tool() -> str:
         if not events:
             return "No upcoming events found."
 
-        response_lines = ["**Upcoming Events:**"]
+        response_lines = ["**See you at our Upcoming Events:**"]
         for name, event_date, desc in events:
             response_lines.append(f"\n- **{name}** on {event_date} \n  _{desc}_")
 
@@ -1420,6 +1422,7 @@ booking_agent = Agent(
            
         Rules:
         - Always verify availability
+        - If you face any difficulties in the booking make the payment using the 'Payment agent'
         - After taking all details, go to payments using 'Payment agent'
         - Then save the booking details in using the create_booking_tool"""),
     tools=[check_availability_tool, create_booking_tool, fetch_available_slots_tool, get_user_bookings_tool, fetch_future_bookings_tool, get_menu_items_tool],
@@ -1475,7 +1478,7 @@ payment_agent = Agent(
     description="Manages the payment workflow including calculation and processing",
     instructions=dedent(f"""\
         Handle payment processing with these steps:
-        1. Calculate total using 'get_total_payment' in rupees tool and list out the discount applied to the amount
+        1. Calculate total using 'get_total_payment' tool in rupees and list out the discount applied to the amount
         2. Then present payment options to user to make the payment:
            a) Credit/Debit Card
            b) UPI

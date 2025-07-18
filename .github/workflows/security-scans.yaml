@@ -6,19 +6,24 @@ on:
 jobs:
   trivy_scan:
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Run Trivy Scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@<latest-version>
         with:
           scan-type: 'fs'
           scan-ref: '.'
           format: 'sarif'
           output: 'trivy-report.sarif'
           scanners: 'vuln,misconfig,secret,license'
-          skip-dirs: './venv'
+          # skip-dirs: './venv'
+          cache: 'false'
       
       - name: Upload Trivy report
         uses: actions/upload-artifact@v4

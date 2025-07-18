@@ -1,43 +1,3 @@
-# name: On-Demand Security Scan
-
-# on:
-#   workflow_dispatch:
-
-# jobs:
-#   trivy_scan:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v4
-#       - name: Install Trivy
-#         run: |
-#           sudo apt-get update
-#           sudo apt-get install -y wget
-#           wget -qO- https://github.com/aquasecurity/trivy/releases/latest/download/trivy_$(uname -s)_$(uname -m).tar.gz | tar xz
-#           sudo mv trivy /usr/local/bin/
-#       - name: Run Trivy on Root Directory
-#         run: |
-#           trivy fs --scanners vuln,misconfig,secret,license --report all --format json --output trivy-report.json --skip-dirs ./venv ./
-#       - name: Upload Trivy Report
-#         uses: actions/upload-artifact@v4
-#         with:
-#           name: trivy-report
-#           path: trivy-report.json
-
-#   semgrep_scan:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v4
-#       - name: Install Semgrep
-#         run: pip install semgrep
-#       - name: Run Semgrep on Root Directory
-#         run: semgrep scan --config=auto --output semgrep-report.json --json ./
-#       - name: Upload Semgrep Report
-#         uses: actions/upload-artifact@v4
-#         with:
-#           name: semgrep-report
-#           path: semgrep-report.json
-
-
 name: Security Scan
 
 on:
@@ -50,14 +10,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run Trivy filesystem scan (root)
-        # Use the official Trivy GitHub Action for best compatibility and no manual install hassles
+      - name: Run Trivy Scan
         uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
-          format: 'json'
-          output: 'trivy-report.json'
+          format: 'sarif'
+          output: 'trivy-report.sarif'
           scanners: 'vuln,misconfig,secret,license'
           skip-dirs: './venv'
       
@@ -65,7 +24,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: trivy-report
-          path: trivy-report.json
+          path: trivy-report.sarif
+      
+      - name: Upload Trivy report to GitHub code scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-report.sarif
+        if: always()
 
   semgrep_scan:
     runs-on: ubuntu-latest
@@ -79,7 +44,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      - name: Run Semgrep scan (root directory)
+      - name: Run Semgrep Scan
         run: semgrep scan -q --sarif --config auto ./ > semgrep-report.sarif
       
       - name: Upload Semgrep report
@@ -88,7 +53,7 @@ jobs:
           name: semgrep-report
           path: semgrep-report.sarif
 
-      - name: Upload Semgrep results to GitHub code scanning (optional)
+      - name: Upload Semgrep results to GitHub code scanning
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: semgrep-report.sarif

@@ -15,3 +15,7 @@ lancedb
 tantivy
 pylance
 sentence-transformers
+googlesearch-python
+pycountry
+tavily-python
+Flask

@@ -10,6 +10,8 @@ jobs:
       security-events: write
       actions: read
       contents: read
+    env:
+      TRIVY_DEBUG: "true"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

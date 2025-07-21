@@ -1764,6 +1764,10 @@ def login(req: LoginRequest):
 
     return {"status": "success", "user_id": user_details["user_id"], "name": user_details["name"], "email": user_details["email"], "age": user_details["age"]}
 
+@app.get("/healthcheck")
+def healthcheck():
+    return {"status": "success"}
+    
 if __name__ == "__main__":
     import uvicorn
     # knowledge_base.load(upsert=True)

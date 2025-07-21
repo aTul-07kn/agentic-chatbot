@@ -100,4 +100,4 @@ jobs:
 
       - name: Run Semgrep Scan
         run: |
-          semgrep --metrics=off --config="p/default" .
+          semgrep scan --metrics=off --config="p/default" --error .

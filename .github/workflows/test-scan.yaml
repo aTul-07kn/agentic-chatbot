@@ -1,4 +1,4 @@
-name: Full CI — App Tests & Security Scan
+name: App Tests & Security Scan
 
 on:
   workflow_dispatch:
@@ -41,12 +41,19 @@ jobs:
 
       - name: API Integration Tests
         run: |
-          sleep 10  # Allow services to start
-          echo "Testing Backend API"
-          curl -sSf http://localhost:8000/healthcheck || (echo "Backend API failed" && exit 1)
+          echo "Waiting for backend to be ready..."
+          for i in {1..10}; do
+            curl -sSf http://localhost:8000/healthcheck && break || sleep 3
+          done || (echo "Backend API failed" && exit 1)
 
-          echo "Testing Frontend Dev Server"
-          curl -sSf http://localhost:5173 || (echo "Frontend not running" && exit 1)
+          echo "Backend is up!"
+
+          echo "Waiting for frontend to be ready..."
+          for i in {1..10}; do
+            curl -sSf http://localhost:5173 && break || sleep 3
+          done || (echo "Frontend not running" && exit 1)
+
+          echo "Frontend is up!"
 
   ###############################################
   # 2. Job: Trivy Security Scan

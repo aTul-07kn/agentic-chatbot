@@ -103,4 +103,4 @@ jobs:
 
       - name: Run Semgrep Scan
         run: |
-          semgrep scan --metrics=off --config="p/default" --config="p/secrets" --error --verbose .
+          semgrep scan --metrics=off --config="p/secrets" --config="p/default" --error --verbose .

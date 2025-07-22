@@ -43,7 +43,7 @@ GEMINI_API_KEY = os.getenv("GENIMI_API_KEY")
 if not GEMINI_API_KEY:
     raise ValueError("GENIMI_API_KEY is not set in the environment variables.")
 
-model = Gemini(id="gemini-2.0-flash", api_key=GEMINI_API_KEY)
+model = Gemini(id="gemini-2.0-flash", api_key="AIzaSyBU8FEf-tVriCDGb3Cw1oa3nM9s3Bhvhbjh")
 
 memory_db = SqliteMemoryDb(
     table_name="memories",

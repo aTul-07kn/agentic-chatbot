@@ -1,0 +1,123 @@
+name: DUMMY TEST
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  ###############################################
+  # 1. Job: Application test
+  ###############################################
+  run-app-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: playzoey-frontend/package-lock.json
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Backend Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Start Backend
+        run: |
+          nohup uvicorn app:app --host 0.0.0.0 --port 8000 > backend.log 2>&1 &
+
+      - name: Install Frontend Dependencies
+        working-directory: ./playzoey-frontend
+        run: npm install
+
+      - name: Start Frontend
+        working-directory: ./playzoey-frontend
+        run: |
+          nohup npm run dev > frontend.log 2>&1 &
+
+      - name: API Integration Tests
+        run: |
+          echo "Waiting for backend to be ready..."
+          for i in {1..10}; do
+            curl -sSf http://localhost:8000/healthcheck && break || sleep 3
+          done || (echo "Backend API failed" && exit 1)
+
+          echo "Backend is up!"
+
+          echo "Waiting for frontend to be ready..."
+          for i in {1..10}; do
+            curl -sSf http://localhost:5173 && break || sleep 3
+          done || (echo "Frontend not running" && exit 1)
+
+          echo "Frontend is up!"
+
+  ###############################################
+  # 2. Job: Trivy Scan
+  ###############################################
+  trivy-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    env:
+      TRIVY_DEBUG: "true"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Trivy Scan
+        uses: aquasecurity/trivy-action@0.32.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'                        
+          output: ''                         
+          scanners: 'vuln,misconfig,secret,license'
+          cache: 'false'
+          exit-code: '1'
+
+  ###############################################
+  # 3. Job: Semgrep Scan
+  ###############################################
+  semgrep-scan:
+    runs-on: ubuntu-latest
+    container:
+      image: returntocorp/semgrep               
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep Scan
+        run: |
+          semgrep scan --metrics=off --config="p/secrets" --config="p/default" --error --verbose .
+
+  ###############################################
+  # 4. Job: Gitleaks Secret Scan
+  ###############################################
+  gitleaks-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: "--no-git -v --redact"

@@ -64,29 +64,51 @@ jobs:
   ###############################################
   # 2. Job: Trivy Scan
   ###############################################
+  # trivy-scan:
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     security-events: write
+  #     actions: read
+  #     contents: read
+  #   env:
+  #     TRIVY_DEBUG: "true"
+
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+
+  #     - name: Run Trivy Scan
+  #       uses: aquasecurity/trivy-action@0.32.0
+  #       with:
+  #         scan-type: 'fs'
+  #         scan-ref: '.'
+  #         format: 'table'                        
+  #         output: ''                         
+  #         scanners: 'vuln,misconfig,secret,license'
+  #         cache: 'false'
+  #         exit-code: '1'
+
   trivy-scan:
-    runs-on: ubuntu-latest
-    permissions:
-      security-events: write
-      actions: read
-      contents: read
-    env:
-      TRIVY_DEBUG: "true"
+  runs-on: ubuntu-latest
+  permissions:
+    security-events: write
+    actions: read
+    contents: read
+  env:
+    TRIVY_DEBUG: "true"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Install Trivy
+      uses: aquasecurity/setup-trivy@v0.2.3
+      with:
+        cache: true
 
-      - name: Run Trivy Scan
-        uses: aquasecurity/trivy-action@0.32.0
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'table'                        
-          output: ''                         
-          scanners: 'vuln,misconfig,secret,license'
-          cache: 'false'
-          exit-code: '1'
+    - name: Run Trivy Scan (table output + ignore list)
+      run: |
+        trivy fs --scanners vuln,misconfig,secret,license \
+          --format table --exit-code 1 --ignorefile .trivyignore.yaml .
 
   ###############################################
   # 3. Job: Semgrep Scan
@@ -111,13 +133,24 @@ jobs:
   ###############################################
   # 4. Job: Gitleaks Secret Scan
   ###############################################
+  # gitleaks-scan:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+
+  #     - name: Run Gitleaks
+  #       uses: gitleaks/gitleaks-action@v2
+  #       with:
+  #         args: "--no-git -v --redact"
+
   gitleaks-scan:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run Gitleaks
+      - name: Run Gitleaks Secret Scan
         uses: gitleaks/gitleaks-action@v2
         with:
-          args: "--no-git -v --redact"
+          args: detect --no-git --source . --config .gitleaks.toml --redact

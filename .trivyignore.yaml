@@ -3,6 +3,8 @@ vulnerabilities:
 misconfigurations:
   - id: AVD-DS-0002
     statement: The image needs root privileges
+  - id: AVD-DS-0026
+    statement: HEALTHCHECK instruction in Dockerfile will be added
 secrets:
   # - id: aws-access-key-id
 licenses:

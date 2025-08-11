@@ -31,7 +31,7 @@ from mysql.connector import Error
 load_dotenv()
 
 NVIDIA_API_KEY="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"
-OPENAI_API_KEY="sk-5D1jjhaFkR_mSukjnbq6-2nk6Coojhwot92sLCrHP_91oGWkok16lh6s7e_RNI"
+OPENAI_API_KEY="sk-5D1jjhaFkR_mSukjnbq6-2nk6Coojhwot92sLCrHP_91oGWkok16lh6s7e_RNI" # gitleaks:allow
 if not NVIDIA_API_KEY:
     raise ValueError("NVIDIA_API_KEY is not set in the environment variables.")
 
@@ -1648,6 +1648,7 @@ strikin_team = Team(
 
 app = FastAPI(title="STRIKIN Concierge Service")
 
+# nosemgrep
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

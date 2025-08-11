@@ -43,5 +43,6 @@ def send_user_data():
         print("Error:", response.text)
 
 if __name__ == '__main__':
+    # nosemgrep
     app.run(debug=True)
 

@@ -89,26 +89,26 @@ jobs:
   #         exit-code: '1'
 
   trivy-scan:
-  runs-on: ubuntu-latest
-  permissions:
-    security-events: write
-    actions: read
-    contents: read
-  env:
-    TRIVY_DEBUG: "true"
-  steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    env:
+      TRIVY_DEBUG: "true"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Install Trivy
-      uses: aquasecurity/setup-trivy@v0.2.3
-      with:
-        cache: true
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@v0.2.3
+        with:
+          cache: true
 
-    - name: Run Trivy Scan (table output + ignore list)
-      run: |
-        trivy fs --scanners vuln,misconfig,secret,license \
-          --format table --exit-code 1 --ignorefile .trivyignore.yaml .
+      - name: Run Trivy Scan (table output + ignore list)
+        run: |
+          trivy fs --scanners vuln,misconfig,secret,license \
+            --format table --exit-code 1 --ignorefile .trivyignore.yaml .
 
   ###############################################
   # 3. Job: Semgrep Scan

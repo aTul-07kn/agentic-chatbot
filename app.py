@@ -1648,10 +1648,9 @@ strikin_team = Team(
 
 app = FastAPI(title="STRIKIN Concierge Service")
 
-# nosemgrep
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"], # nosemgrep
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

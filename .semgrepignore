@@ -25,7 +25,7 @@ _cargo/
 # .venv is used both by Go and Python.
 
 # Common test paths
-test/
-tests/
-testsuite/
-*_test.go
+# test/
+# tests/
+# testsuite/
+# *_test.go

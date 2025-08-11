@@ -1,0 +1,14 @@
+title = "gitleaks config"
+[extend]
+useDefault = true
+
+[allowlist]
+description = "ignore known test or inactive secrets"
+regexTarget = "match"
+regexes = [
+  '''EXAMPLE_STATIC_TOKEN_12345''',
+  '''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'''
+]
+paths = [
+  '''tests/fixtures/.*''',
+]

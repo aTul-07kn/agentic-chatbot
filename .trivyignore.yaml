@@ -1,0 +1,9 @@
+vulnerabilities:
+  # - id: AVD-DS-0026
+misconfigurations:
+  - id: AVD-DS-0002
+    statement: The image needs root privileges
+secrets:
+  # - id: aws-access-key-id
+licenses:
+  # - id: GPL-3.0

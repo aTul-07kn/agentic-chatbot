@@ -147,6 +147,7 @@ jobs:
   #       with:
   #         args: "--no-git -v --redact"
 
+  # test
   gitleaks-scan:
     runs-on: ubuntu-latest
     steps:

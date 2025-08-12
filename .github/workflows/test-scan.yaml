@@ -1,6 +1,9 @@
 name: App Tests & Security Scan
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:

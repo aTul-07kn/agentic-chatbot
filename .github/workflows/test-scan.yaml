@@ -157,5 +157,5 @@ jobs:
 
       - name: Run Gitleaks Secret Scan
         uses: gitleaks/gitleaks-action@v2
-        # with:
-        #   command: detect --no-git --source . --config .gitleaks.toml --redact
+        with:
+          args: detect --no-git --source . --config .gitleaks.toml --redact

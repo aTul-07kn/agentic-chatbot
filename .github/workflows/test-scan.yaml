@@ -163,6 +163,29 @@ jobs:
           fetch-depth: 1
 
       - name: Run Gitleaks Secret Scan
+        id: gitleaks
         run: |
+          mkdir -p gitleaks-reports
+          set +e
           docker run --rm -v "$PWD":/repo ghcr.io/gitleaks/gitleaks:latest \
-            detect --no-git --source=/repo --config /repo/.gitleaks.toml --redact --verbose --exit-code 1
+            detect --no-git --source=/repo --config /repo/.gitleaks.toml \
+            --redact --verbose \
+            --report-format json \
+            --report-path /repo/gitleaks-reports/results.json \
+            --exit-code 1
+          EXIT_CODE=$?
+          echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+          set -e
+
+      - name: Upload Gitleaks artifact (only if leaks found)
+        if: steps.gitleaks.outputs.exit_code == '1'
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-results
+          path: gitleaks-reports/results.json
+          if-no-files-found: error
+
+      # Optional: Fail the job when leaks are found
+      - name: Fail if leaks detected
+        if: steps.gitleaks.outputs.exit_code == '1'
+        run: exit 1

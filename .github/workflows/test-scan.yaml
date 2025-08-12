@@ -150,13 +150,23 @@ jobs:
   # test
   gitleaks-scan:
     runs-on: ubuntu-latest
+    # steps:
+    #   - name: Checkout code
+    #     uses: actions/checkout@v4
+    #     with:
+    #       fetch-depth: 0
+
+    #   - name: Run Gitleaks Secret Scan
+    #     uses: gitleaks/gitleaks-action@v2
+    #     # with:
+    #     #   args: detect --no-git --source . --config .gitleaks.toml --redact
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Run Gitleaks Secret Scan
-        uses: gitleaks/gitleaks-action@v2
-        # with:
-        #   args: detect --no-git --source . --config .gitleaks.toml --redact
+        run: |
+          docker run --rm -v "$PWD":/repo ghcr.io/gitleaks/gitleaks:latest \
+            detect --no-git --source=/repo --config /repo/.gitleaks.toml --redact --exit-code 2

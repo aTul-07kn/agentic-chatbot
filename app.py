@@ -29,7 +29,7 @@ import mysql.connector
 from mysql.connector import Error
 
 load_dotenv()
-
+OPENAI_API_KEY2="sk-5D1jjhaFkR_mSukjnbq6-2nk6Coojhwot92sLCrHP_91oGWkok16lh6s7eRN12"
 NVIDIA_API_KEY="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"
 OPENAI_API_KEY="sk-5D1jjhaFkR_mSukjnbq6-2nk6Coojhwot92sLCrHP_91oGWkok16lh6s7e_RNI"
 if not NVIDIA_API_KEY:

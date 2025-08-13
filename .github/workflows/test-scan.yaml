@@ -177,7 +177,7 @@ jobs:
           echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
           set -e
 
-      - name: Upload Gitleaks artifact (only if leaks found)
+      - name: Upload Gitleaks artifact
         if: steps.gitleaks.outputs.exit_code == '1'
         uses: actions/upload-artifact@v4
         with:
@@ -185,7 +185,6 @@ jobs:
           path: gitleaks-reports/results.json
           if-no-files-found: error
 
-      # Optional: Fail the job when leaks are found
       - name: Fail if leaks detected
         if: steps.gitleaks.outputs.exit_code == '1'
         run: exit 1

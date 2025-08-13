@@ -13,7 +13,7 @@ from agno.tools.tavily import TavilyTools
 
 # Load environment variables from .env file
 load_dotenv()
-
+OPENAI_VISION_API_KEY="sk-5D1jjhaFkR_mSukjnbq6-babaknxkjsbxwjk3jne3uidh3ubbbb"
 # Initialize Gemini model with API key
 model = Gemini(id="gemini-2.0-flash", api_key=os.getenv("GENIMI_API_KEY"))
 
